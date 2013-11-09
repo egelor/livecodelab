@@ -492,7 +492,8 @@ define () ->
     # (although which ambient light do you pick if there
     # is more than one?)
     line: (a, b, c) ->
-      
+      if isUnevaluated(a)
+        return -> @line a()      
       # lines can only have one material, which is LineBasicMaterial
       # which doesn't react to lights (as opposed to MeshLambertMaterial, which
       # only applies to meshes).
@@ -524,6 +525,8 @@ define () ->
       @commonPrimitiveDrawingLogic a, b, c, primitiveProperties
 
     rect: (a, b, c) ->
+      if isUnevaluated(a)
+        return -> @rect a()
       # primitive-specific initialisations:
       primitiveProperties =
         canFill: true
@@ -537,6 +540,8 @@ define () ->
       @commonPrimitiveDrawingLogic a, b, c, primitiveProperties
 
     box: (a, b, c) ->
+      if isUnevaluated(a)
+        return -> @box a()
       # primitive-specific initialisations:
       primitiveProperties =
         canFill: true
@@ -550,6 +555,8 @@ define () ->
       @commonPrimitiveDrawingLogic a, b, c, primitiveProperties
 
     peg: (a, b, c) ->
+      if isUnevaluated(a)
+        return -> @peg a()
       # primitive-specific initialisations:
       primitiveProperties =
         canFill: true
@@ -563,12 +570,16 @@ define () ->
       @commonPrimitiveDrawingLogic a, b, c, primitiveProperties
 
     ballDetail: (a) ->
+      if isUnevaluated(a)
+        return -> @ballDetail a()
       return if not a?
       a = 2  if a < 2
       a = 30  if a > 30
       @ballDetLevel = Math.round(a)
 
     ball: (a, b, c) ->
+      if isUnevaluated(a)
+        return -> @ball a()
       # primitive-specific initialisations:
       primitiveProperties =
         canFill: true
@@ -584,6 +595,8 @@ define () ->
     
     # Modified from Processing.js
     fill: (r, g, b, a) ->
+      if isUnevaluated(a)
+        return -> @fill a()
       # Three.js needs two integers to define an RGBA: the rgb as a 24 bit integer
       # and the alpha (from zero to one).
       # Now the thing is that the color gan be given in different
@@ -665,6 +678,8 @@ define () ->
     @see #colorMode()
     ###
     stroke: (r, g, b, a) ->
+      if isUnevaluated(a)
+        return -> @stroke a()
       # see comment on fill method above
       # for some comments on how this method works.
       @doStroke = true
@@ -698,6 +713,8 @@ define () ->
       @doStroke = false
 
     strokeSize: (a) ->
+      if isUnevaluated(a)
+        return -> @strokeSize a()
       # note that either Three.js of the graphic card limit the size
       # of the stroke. This is because openGL strokes are VERY crude
       # (the cap is not even square, it's worse than that:

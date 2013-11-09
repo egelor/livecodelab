@@ -39,6 +39,9 @@ define () ->
       @worldMatrix.identity()
 
     move: (a, b, c = 0) ->
+      if isUnevaluated(a)
+        return -> @move a()
+
       if typeof a isnt "number"
         a = Math.sin(@liveCodeLabCoreInstance.timeKeeper.getTime() / 500)
         b = Math.cos(@liveCodeLabCoreInstance.timeKeeper.getTime() / 500)
@@ -49,6 +52,8 @@ define () ->
       @worldMatrix.translate new @liveCodeLabCore_three.Vector3(a, b, c)
 
     rotate: (a, b, c = 0) ->
+      if isUnevaluated(a)
+        return -> @rotate a()
       if typeof a isnt "number"
         a = @liveCodeLabCoreInstance.timeKeeper.getTime() / 1000
         b = a
@@ -57,8 +62,10 @@ define () ->
         b = a
         c = a
       @worldMatrix.rotateX(a).rotateY(b).rotateZ c
+      unevaluatedObject() if unevaluatedObject?
 
     scale: (a, b, c = 1) ->
+      unevaluatedObject = storeIfUnevaluated(a)
       if typeof a isnt "number"
         a = 1 + Math.sin(@liveCodeLabCoreInstance.timeKeeper.getTime() / 500) / 4
         b = a
@@ -72,6 +79,7 @@ define () ->
       b = 0.000000001  if b > -0.000000001 and b < 0.000000001
       c = 0.000000001  if c > -0.000000001 and c < 0.000000001
       @worldMatrix.scale new @liveCodeLabCore_three.Vector3(a, b, c)
+      unevaluatedObject() if unevaluatedObject?
 
   MatrixCommands
 

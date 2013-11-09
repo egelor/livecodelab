@@ -29,6 +29,8 @@ define () ->
     
     # ambientLight needs to be global
     ambientLight: (r, g, b, a) ->
+      if isUnevaluated(r)
+        return -> @ambientLight r()
       newLightCreated = false
       if not r?
         

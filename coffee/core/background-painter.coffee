@@ -70,7 +70,10 @@ define () ->
       
       # This needs to be global so it can be run by the draw function
     simpleGradient: (a, b, c, d) ->
-      @currentGradientStackValue =
+     if a?
+       if isUnevaluated(a)
+        return -> @simpleGradient a()
+     @currentGradientStackValue =
         @currentGradientStackValue + " " + a + "" + b + "" + c + "" + d + "null "
       @gradStack.push
         gradStacka: @liveCodeLabCoreInstance.colourFunctions.color(a)
@@ -83,6 +86,8 @@ define () ->
     
     # This needs to be global so it can be run by the draw function
     background: ->
+      if isUnevaluated(arguments[0])
+        return -> @background((arguments[0])())
       
       # [todo] should the screen be cleared when you invoke
       # the background command? (In processing it's not)

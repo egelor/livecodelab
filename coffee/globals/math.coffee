@@ -5,6 +5,9 @@
 #//////////////////////////////////////////////////////////////////////////
 
 # Calculation
+
+int = Math.floor
+
 ###
 Calculates the absolute value (magnitude) of a number. The absolute value of a
 number is always positive.
@@ -462,6 +465,9 @@ To convert a floating-point random number to an integer, use the int() function.
 @see noise
 ###
 random = ->
+  if isUnevaluated(arguments[0])
+    return -> @random((arguments[0])())
+
   return currentRandom()  if !arguments.length
   return currentRandom() * arguments[0]  if arguments.length is 1
   aMin = arguments[0]
@@ -662,6 +668,9 @@ but this will differ depending on use.
 ###
 noise = (x, y, z) ->
   
+  if isUnevaluated(x)
+    return -> @noise x()
+
   # caching
   noiseProfile.generator = new PerlinNoise(noiseProfile.seed)  if noiseProfile.generator is undefined
   generator = noiseProfile.generator

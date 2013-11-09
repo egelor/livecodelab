@@ -497,6 +497,12 @@ define () ->
       listOfExpressions = @listOfExpressions.join "|"
       listOfLCLKeywords = listOfStatements + "|" + listOfExpressions
 
+      listOfStatements_ = @listOfStatements.join "_|"
+      listOfStatements_ = listOfStatements_ + "_"
+      listOfExpressions_ = @listOfExpressions.join "_|"
+      listOfExpressions_ = listOfExpressions_ + "_"
+      listOfLCLKeywords_ = listOfStatements_ + "|" + listOfExpressions_
+
       
       # adding () to single tokens on their own at the start of a line
       # ball
@@ -531,19 +537,48 @@ define () ->
       # but I don't want
       #   box -1
       # to turn into box() -1
+
+      # anithing next to an arithmetic operator has to be evaluated
       delimitersForStatements = ":|;|\\,|\\?|\\)|//|\\#|\\selse|\\sthen"
       delimitersForExpressions = delimitersForStatements + "|" + "\\+|-|\\*|/|%|&|]|<|>|=|\\|"
-      rx = RegExp("([^a-zA-Z0-9])("+listOfStatements+")[ \\t]*("+delimitersForStatements+")",'g');
-      code = code.replace(rx, "$1$2()$3")
+      delim = "\\+|-|\\*|/|%|&|]|<|>|=|\\|"
+
+      # what NOT to substitute
+      rx = RegExp("([^a-zA-Z0-9\\r])("+listOfLCLKeywords+")([ \\t]*)("+listOfLCLKeywords+")("+delimitersForExpressions+")",'g');
+      alert rx
+      alert code
+      code = code.replace(rx, "$1$2$3$4_$5")
+      alert code
+      rx = RegExp("^(.*?)("+listOfLCLKeywords+")([^a-zA-Z0-9\\r])("+listOfLCLKeywords+")([ \\t]*)$",'gm');
+      code = code.replace(rx, "$1$2$3$4_$5")
+      alert code
+
+      for i in [1..5]
+        rx = RegExp("^(.*?)("+listOfLCLKeywords_+")([^a-zA-Z0-9\\r])("+listOfLCLKeywords+")([^_\\r])("+delimitersForExpressions+")(.*)$",'gm');
+        code = code.replace(rx, "$1$2$3$4_$5$6$7")
+        rx = RegExp("^(.*?)("+listOfLCLKeywords_+")([^a-zA-Z0-9\\r])("+listOfLCLKeywords+")([^_\\r])([ \\t]*)(.*)$",'gm');
+        code = code.replace(rx, "$1$2$3$4_$5$6$7")
+
+
+
       rx = RegExp("([^a-zA-Z0-9])("+listOfExpressions+")[ \\t]*("+delimitersForExpressions+")",'g');
       code = code.replace(rx, "$1$2()$3")
+
+      rx = RegExp("([^a-zA-Z0-9])("+listOfStatements+")[ \\t]*("+delimitersForStatements+")",'g');
+      code = code.replace(rx, "$1$2()$3")
+
 
       #box 0.5,2
       #box; rotate; box
       #if random() > 0.5 then box 0.2,3; ball; background red
       #if ball then ball if true then 0 else 1
       #ball if true then 0 else 1
+
+      # tokens at the end of the line (with final semicolon)
+      rx = RegExp("([^a-zA-Z0-9])("+listOfLCLKeywords+")[ \\t]*;$",'gm');
+      code = code.replace(rx, "$1$2();")
       
+
       # tokens at the end of the line (without final semicolon,
       # if there is a final semicolon it's handled by previous case)
       # doOnce frame = 0; box
@@ -553,6 +588,48 @@ define () ->
       rx = RegExp("([^a-zA-Z0-9])("+listOfLCLKeywords+")[ \\t]*$",'gm');
       code = code.replace(rx, "$1$2()")
       
+
+      # put back what we didn't mean to substitute
+      rx = RegExp("([^a-zA-Z0-9])("+listOfLCLKeywords+")_",'g');
+      code = code.replace(rx, "$1$2")
+
+      # add the evaluators
+
+      rx = RegExp("^(\\s*)("+listOfLCLKeywords+")([^\\(\\r])(.*)$",'gm');
+      code = code.replace(rx, "$1evaluate $2$3$4")
+
+      rx = RegExp("(;)\s*("+listOfLCLKeywords+")([^\\(\\r])",'g');
+      code = code.replace(rx, "$1 evaluate $2$3")
+
+      rx = RegExp("(if\\s+)("+listOfLCLKeywords+")([^\\(\\r])",'g');
+      code = code.replace(rx, "$1evaluate $2$3")
+
+      rx = RegExp("(then\\s+)("+listOfLCLKeywords+")([^\\(\\r])",'g');
+      code = code.replace(rx, "$1evaluate $2$3")
+
+      rx = RegExp("(else\\s+)("+listOfLCLKeywords+")([^\\(\\r])",'g');
+      code = code.replace(rx, "$1evaluate $2$3")
+
+      rx = RegExp("(->\\s+)("+listOfLCLKeywords+")([^\\(\\r])",'g');
+      code = code.replace(rx, "$1evaluate $2$3")
+
+      alert code
+      
+      rx = RegExp("(else)\\s+([a-zA-Z1-9])("+listOfLCLKeywords+")[^\\(\\r](.*)",'g');
+      code = code.replace(rx, "$1 evaluate $2$3$4")
+
+      rx = RegExp("(then)\\s+([a-zA-Z1-9])("+listOfLCLKeywords+")[^\\(\\r](.*)",'g');
+      code = code.replace(rx, "$1 evaluate $2$3$4")
+
+      # the [^;]*? is to make sure that we don't take ; within the times argument
+      # example:
+      #  box; box ;  2 times: peg
+      # if we don't exclude the semicolon form the times argument then we transform into
+      #  box; (box ;  2+0).times ->  peg
+      # which is not correct
+      code = code.replace(/^(.*?)(;)\s*([a-zA-Z1-9])([^;\r\n]*?)[^\.\r\n]times[:]*(.*)$/gm, "$1$2 ($3$4+0).times -> $5")
+
+
       
       # draw() could just be called by mistake and it's likely
       # to be disastrous. User doesn't even have visibility of such method,
@@ -567,7 +644,7 @@ define () ->
       # allows // for comments
       # the hash is more difficult to write
       code = code.replace(/\/\//g, "#")
-      #console.log code
+      console.log code
       
 
       try
